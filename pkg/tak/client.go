@@ -62,6 +62,16 @@ type ClientConfig struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 
+	// TCP health-check configurations
+	// KeepAlive enables TCP keepalive probes at the given interval.
+	// Detects dead connections during idle periods.
+	// Zero means use the OS default; negative means disable.
+	KeepAlive time.Duration
+	// TCPUserTimeout sets TCP_USER_TIMEOUT (Linux only).
+	// If unacked data sits in the send buffer longer than this, the kernel kills the connection.
+	// Detects dead connections during active sends. Zero means use OS default.
+	TCPUserTimeout time.Duration
+
 	// Multicast-specific configuration
 	MulticastAddr string
 	MulticastPort int

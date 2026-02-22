@@ -3,6 +3,7 @@ package tak
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 	"time"
@@ -28,7 +29,8 @@ func (c *TCPClient) Connect(ctx context.Context) error {
 	}
 
 	dialer := &net.Dialer{
-		Timeout: c.config.DialTimeout,
+		Timeout:   c.config.DialTimeout,
+		KeepAlive: c.config.KeepAlive,
 	}
 	address := net.JoinHostPort(c.config.Address, strconv.Itoa(c.config.Port))
 
@@ -37,6 +39,15 @@ func (c *TCPClient) Connect(ctx context.Context) error {
 	conn, err := dialer.DialContext(ctx, "tcp", address)
 	if err != nil {
 		return err
+	}
+
+	// Apply TCP_USER_TIMEOUT if configured (Linux only).
+	// Causes kernel to kill connection if unacked data sits in send buffer too long.
+	if c.config.TCPUserTimeout > 0 {
+		if err := setTCPUserTimeout(conn, c.config.TCPUserTimeout); err != nil {
+			conn.Close()
+			return fmt.Errorf("failed to set TCP_USER_TIMEOUT: %w", err)
+		}
 	}
 
 	// Set up connection monitoring
